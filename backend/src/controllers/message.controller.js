@@ -1,4 +1,3 @@
-
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 
@@ -27,7 +26,7 @@ export const getMessages = async (req, res) => {
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
       ],
-    }).sort({ createdAt: 1 }); // optional: sort chronologically
+    });
 
     res.status(200).json(messages);
   } catch (error) {
@@ -44,10 +43,8 @@ export const sendMessage = async (req, res) => {
 
     let imageUrl;
     if (image) {
+      // Upload base64 image to cloudinary
       const uploadResponse = await cloudinary.uploader.upload(image);
-      if (!uploadResponse || !uploadResponse.secure_url) {
-        return res.status(500).json({ error: "Image upload failed" });
-      }
       imageUrl = uploadResponse.secure_url;
     }
 
@@ -57,9 +54,9 @@ export const sendMessage = async (req, res) => {
       text,
       image: imageUrl,
     });
+
     await newMessage.save();
 
-    // Optional: Emit message to receiver if they're connected
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
