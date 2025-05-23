@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import cloudinary from "../lib/cloudinary.js";
 
 export const signup = async (req, res) => {
-  const { fullName, email, password } = req.body;
+  const { fullName, email, password, profilePic } = req.body;
   try {
     if (!fullName || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
@@ -15,32 +15,35 @@ export const signup = async (req, res) => {
     }
 
     const user = await User.findOne({ email });
-
     if (user) return res.status(400).json({ message: "Email already exists" });
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    let uploadedProfilePicUrl = "";
+    if (profilePic) {
+      const uploadResponse = await cloudinary.uploader.upload(profilePic, {
+        folder: "profile_pics",
+      });
+      uploadedProfilePicUrl = uploadResponse.secure_url;
+    }
+
     const newUser = new User({
       fullName,
       email,
       password: hashedPassword,
+      profilePic: uploadedProfilePicUrl || undefined,
     });
 
-    if (newUser) {
-      // generate jwt token here
-      generateToken(newUser._id, res);
-      await newUser.save();
+    await newUser.save();
+    generateToken(newUser._id, res);
 
-      res.status(201).json({
-        _id: newUser._id,
-        fullName: newUser.fullName,
-        email: newUser.email,
-        profilePic: newUser.profilePic,
-      });
-    } else {
-      res.status(400).json({ message: "Invalid user data" });
-    }
+    res.status(201).json({
+      _id: newUser._id,
+      fullName: newUser.fullName,
+      email: newUser.email,
+      profilePic: newUser.profilePic,
+    });
   } catch (error) {
     console.log("Error in signup controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -87,14 +90,18 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic } = req.body;
     const userId = req.user._id;
+    const { profilePic } = req.body;
 
     if (!profilePic) {
       return res.status(400).json({ message: "Profile pic is required" });
     }
 
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
+    // Upload the base64 image string to Cloudinary
+    const uploadResponse = await cloudinary.uploader.upload(profilePic, {
+      folder: "profile_pics",
+    });
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { profilePic: uploadResponse.secure_url },
@@ -103,7 +110,7 @@ export const updateProfile = async (req, res) => {
 
     res.status(200).json(updatedUser);
   } catch (error) {
-    console.log("error in update profile:", error);
+    console.log("Error in update profile:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
