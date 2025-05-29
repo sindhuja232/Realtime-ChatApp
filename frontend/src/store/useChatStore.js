@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
-import { axiosInstance } from "../lib/axios";
+import axiosInstance from "../lib/axios";
 import { useAuthStore } from "./useAuthStore";
 
 export const useChatStore = create((set, get) => ({
@@ -55,12 +55,11 @@ export const useChatStore = create((set, get) => ({
     const socket = useAuthStore.getState().socket;
     if (!socket) return;
 
-    socket.off("newMessage"); // clean previous listener to avoid duplicates
+    socket.off("newMessage");
 
     socket.on("newMessage", (newMessage) => {
       const isFromSelectedUser = newMessage.senderId === selectedUser._id;
       const isToSelectedUser = newMessage.receiverId === selectedUser._id;
-      // Also consider messages sent by current user (for real-time echo)
       const currentUserId = useAuthStore.getState().authUser?._id;
 
       if (isFromSelectedUser || isToSelectedUser || newMessage.senderId === currentUserId) {
