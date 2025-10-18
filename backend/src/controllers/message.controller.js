@@ -26,7 +26,7 @@ export const getMessages = async (req, res) => {
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
       ],
-    }).sort({ createdAt: -1 });
+    });
 
     res.status(200).json(messages);
   } catch (error) {
@@ -37,25 +37,15 @@ export const getMessages = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image, document, voice } = req.body;
+    const { text, image } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
-    let imageUrl, documentUrl, voiceUrl;
-
+    let imageUrl;
     if (image) {
+      // Upload base64 image to cloudinary
       const uploadResponse = await cloudinary.uploader.upload(image);
       imageUrl = uploadResponse.secure_url;
-    }
-
-    if (document) {
-      const uploadResponse = await cloudinary.uploader.upload(document, { resource_type: "raw" });
-      documentUrl = uploadResponse.secure_url;
-    }
-
-    if (voice) {
-      const uploadResponse = await cloudinary.uploader.upload(voice, { resource_type: "video" });
-      voiceUrl = uploadResponse.secure_url;
     }
 
     const newMessage = new Message({
@@ -63,8 +53,6 @@ export const sendMessage = async (req, res) => {
       receiverId,
       text,
       image: imageUrl,
-      document: documentUrl,
-      voice: voiceUrl,
     });
 
     await newMessage.save();

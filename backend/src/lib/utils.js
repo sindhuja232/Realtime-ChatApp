@@ -1,3 +1,4 @@
+
 import jwt from "jsonwebtoken";
 
 export const generateToken = (userId, res) => {
@@ -14,3 +15,4 @@ export const generateToken = (userId, res) => {
 
   return token;
 };
+

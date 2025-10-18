@@ -4,9 +4,9 @@ import { getMessages, getUsersForSidebar, sendMessage } from "../controllers/mes
 
 const router = express.Router();
 
-router.get("/users", protectRoute, getUsersForSidebar); // get sidebar users sorted by latest message
+router.get("/users", protectRoute, getUsersForSidebar);
 router.get("/:id", protectRoute, getMessages);
 
-router.post("/send/:id", protectRoute, sendMessage); // send text/image/doc/voice message
+router.post("/send/:id", protectRoute, sendMessage);
 
 export default router;
